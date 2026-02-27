@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>평하청춘</title>
+    <style>
+        @font-face {
+            font-family: 'DungGeunMo';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
+        }
+
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'DungGeunMo', sans-serif;
+            font-weight: bold;
+        }
+
+        #screen {
+            width: 320px;
+            height: 480px;
+            background: #fff;
+            border: 4px solid #666;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .status-bar {
+            background: #d3d3d3;
+            height: 26px;
+            font-size: 15px; 
+            padding: 2px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #999;
+        }
+
+        header {
+            background: linear-gradient(to bottom, #5ba1ed, #2a69b5);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 22px;
+            text-shadow: 2px 2px 0px #000;
+            border-bottom: 2px solid #003366;
+        }
+
+        #content {
+            flex: 1;
+            background-color: #e1f0ff;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* 6구 그리드 메뉴 */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding: 20px 10px;
+        }
+        .menu-item { display: flex; flex-direction: column; align-items: center; font-size: 16px; cursor: pointer; color: #333; }
+        .menu-icon { width: 60px; height: 60px; background: #fff; border: 2px solid #2a69b5; border-radius: 12px; margin-bottom: 6px; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        .menu-icon img { width: 85%; height: 85%; object-fit: contain; }
+        .disabled { opacity: 0.4; cursor: default; }
+
+        /* 메시지 상세 (입체 테두리 유지) */
+        #view-detail { padding: 10px; display: flex; flex-direction: column; gap: 12px; }
+        .msg-section { display: flex; flex-direction: column; }
+        .msg-label { display: flex; align-items: center; gap: 5px; font-size: 16px; color: #333; margin-bottom: 4px; padding-left: 5px; }
+        .msg-white-box { background-color: #fff; border: 2px solid #888; box-shadow: 1px 1px 0px #fff, inset 2px 2px 2px rgba(0,0,0,0.2); padding: 12px; min-height: 140px; font-size: 19px; line-height: 1.5; color: #000; word-break: break-all; }
+        .sender-box { background-color: #eee; border: 2px solid #888; box-shadow: 1px 1px 0px #fff; padding: 8px 12px; font-size: 16px; color: #222; display: flex; justify-content: space-between; }
+        .msg-list-item { padding: 15px; border-bottom: 1px solid #b8d4ed; cursor: pointer; font-size: 18px; background: rgba(255,255,255,0.3); }
+
+        /* 스네이크 게임 스타일 */
+        #view-game { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #000; position: relative; }
+        #game-canvas { border: 2px solid #5ba1ed; background: #111; }
+        #game-start-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; z-index: 10; }
+        .start-btn { background: #2a69b5; color: white; padding: 10px 25px; border: 2px solid #fff; font-size: 20px; cursor: pointer; margin-top: 15px; }
+        .game-controls { margin-top: 15px; display: grid; grid-template-areas: ". up ." "left down right"; gap: 8px; }
+        .ctrl-btn { width: 40px; height: 40px; background: #2a69b5; color: #fff; border: 2px solid #fff; display: flex; justify-content: center; align-items: center; font-size: 18px; cursor: pointer; border-radius: 5px; }
+
+        /* 갤러리 */
+        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; }
+        .photo-slot { width: 100%; aspect-ratio: 1/1; background: #ccc; border: 2px solid #999; overflow: hidden; }
+        .photo-slot img { width: 100%; height: 100%; object-fit: cover; }
+
+        footer { background: #1a4a80; color: white; display: flex; justify-content: space-around; padding: 12px 0; font-size: 18px; border-top: 2px solid #003366; }
+        .btn { cursor: pointer; flex: 1; text-align: center; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="screen">
+    <div class="status-bar">
+        <span>📡 SKT</span>
+        <span id="current-time">00:00 AM</span>
+    </div>
+
+    <header id="page-title">메인 메뉴</header>
+
+    <div id="content">
+        <div id="view-main">
+            <div class="menu-grid">
+                <div class="menu-item disabled"><div class="menu-icon"><img src="설정.png"></div>설정</div>
+                <div class="menu-item disabled"><div class="menu-icon"><img src="카메라.png"></div>카메라</div>
+                <div class="menu-item" onclick="changeView('game')"><div class="menu-icon"><img src="게임.png"></div>게임</div>
+                <div class="menu-item" onclick="changeView('gallery')"><div class="menu-icon"><img src="갤러리.png"></div>갤러리</div>
+                <div class="menu-item" onclick="changeView('messages')"><div class="menu-icon"><img src="메세지.png"></div>메시지</div>
+                <div class="menu-item disabled"><div class="menu-icon"><img src="전화.png"></div>전화</div>
+            </div>
+        </div>
+
+        <div id="view-messages" class="hidden">
+            <div class="msg-list-item" onclick="showDetail('권승', '길냥이 밥 주는데 너 닮은 애 있음. 와서 보등가')">제목 없음</div>
+            <div class="msg-list-item" onclick="showDetail('3반 한태훈', '그만보내')">re:re:re:re:re:</div>
+            <div class="msg-list-item" onclick="showDetail('현검 선배', '시간 괜찮을 때 전화 줘.')">연락</div>
+            <div class="msg-list-item" onclick="showDetail('태윤이', '안녕하세요! 오늘 구름이 정말 그림 같아서 문득 선배 생각이 났어요. 좋은 하루 보내세요. ')">오늘 하늘 진짜 예뻐요!</div>
+            <div class="msg-list-item" onclick="showDetail('윤보경', '혹시... 시간 괜찮으면... 매점 같이 가 줄 수 있어...? 혼자는 좀 그래서... >_<')">저기...</div>
+            <div class="msg-list-item" onclick="showDetail('준혁킹', '이따 매점 빵빵빵빵빵빵빵빵빵빵빵빵 쏜다!!!!!!!!!! 나 오늘 용돈 받음ㅋㅋㅋㅋㅋㅋㅋㅋㅋ늦으면 국물도 없음 ㄱㄱㄱㄱㄱㄱ')">아뵤!!!!!!!!!!!!!</div>
+            <div class="msg-list-item" onclick="showDetail('무택찐', '놀러 나와 ㅇㅇ 후회 안 하게 해드림')">뭐하냐 심심아</div>
+            <div class="msg-list-item" onclick="showDetail('이민솔', '죽을래? 다시 한번 그딴 소리 지껄이면 찾아가서 머리털 다 뽑아버린다.')">장난까냐?</div>
+            <div class="msg-list-item" onclick="showDetail('김주영', '5시 코트. 늦지 마.')">농구</div>
+            <div class="msg-list-item" onclick="showDetail('서건태', '저 농구하는 거 보러 오세요')">선배</div>
+            <div class="msg-list-item" onclick="showDetail('강건오', '네가 지난번에 물어봤던 문제. 풀이 과정에 논리적 오류가 세 군데 있었음. 수정해서 보낸다. 확인해.')">문제풀이 확인 좀</div>
+            <div class="msg-list-item" onclick="showDetail('도희 선배', '할 말 있으면 전화해. 문자 치기 귀찮다.')">후배님아</div>
+        </div>
+
+        <div id="view-detail" class="hidden">
+            <div class="msg-section">
+                <div class="msg-label">📄 메시지 내용</div>
+                <div id="msg-content" class="msg-white-box"></div>
+            </div>
+            <div class="msg-section">
+                <div class="msg-label">👤 발신자 정보</div>
+                <div class="sender-box"><span>이름</span><span id="msg-sender"></span></div>
+            </div>
+        </div>
+
+        <div id="view-game" class="hidden">
+            <div id="game-start-overlay">
+                <div>준비되셨나요?</div>
+                <button class="start-btn" onclick="runGame()">시작하기</button>
+            </div>
+            <canvas id="game-canvas" width="200" height="200"></canvas>
+            <div class="game-controls">
+                <div class="ctrl-btn" style="grid-area: up" onclick="changeDir('up')">▲</div>
+                <div class="ctrl-btn" style="grid-area: left" onclick="changeDir('left')">◀</div>
+                <div class="ctrl-btn" style="grid-area: down" onclick="changeDir('down')">▼</div>
+                <div class="ctrl-btn" style="grid-area: right" onclick="changeDir('right')">▶</div>
+            </div>
+        </div>
+
+        <div id="view-gallery" class="hidden">
+            <div class="gallery-grid">
+                <div class="photo-slot"><img src="08.08.11.jpg"></div>
+                <div class="photo-slot"><img src="08.08.17.jpg"></div>
+                <div class="photo-slot"><img src="08.08.19.jpg"></div>
+                <div class="photo-slot"><img src="08.09.02.jpg"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="btn" onclick="goHome()">홈</div>
+        <div class="btn" onclick="handleBack()" id="btn-back">확인</div>
+    </footer>
+</div>
+
+<script>
+    function updateClock() {
+        const now = new Date();
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        document.getElementById('current-time').innerText = `${hours}:${minutes} ${ampm} 🔋`;
+    }
+    setInterval(updateClock, 1000); updateClock();
+
+    let currentView = 'main';
+
+    function changeView(view) {
+        document.querySelectorAll('#content > div').forEach(el => el.classList.add('hidden'));
+        document.getElementById('view-' + view).classList.remove('hidden');
+        currentView = view;
+        
+        // 게임 제어
+        if(view === 'game') {
+            document.getElementById('page-title').innerText = "스네이크";
+            resetGameUI();
+        } else {
+            stopGame();
+        }
+
+        if(view === 'main') document.getElementById('page-title').innerText = "메인 메뉴";
+        if(view === 'messages') document.getElementById('page-title').innerText = "메시지함";
+        if(view === 'gallery') document.getElementById('page-title').innerText = "내 앨범";
+    }
+
+    // 메시지 상세
+    function showDetail(title, content) {
+        changeView('detail');
+        document.getElementById('page-title').innerText = "메시지 보기";
+        document.getElementById('msg-content').innerText = content;
+        document.getElementById('msg-sender').innerText = title;
+    }
+
+    function handleBack() {
+        if (currentView === 'detail') changeView('messages');
+        else if (currentView !== 'main') changeView('main');
+    }
+
+    function goHome() { changeView('main'); }
+
+    // --- 스네이크 게임 로직 ---
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let snake, food, direction, gameInterval;
+
+    function resetGameUI() { stopGame(); document.getElementById('game-start-overlay').classList.remove('hidden'); }
+    function runGame() {
+        document.getElementById('game-start-overlay').classList.add('hidden');
+        snake = [{x: 10, y: 10}]; food = {x: 15, y: 15}; direction = 'right';
+        if(gameInterval) clearInterval(gameInterval);
+        gameInterval = setInterval(gameLoop, 150);
+    }
+    function stopGame() { clearInterval(gameInterval); }
+    function changeDir(d) {
+        if (d === 'left' && direction !== 'right') direction = 'left';
+        if (d === 'right' && direction !== 'left') direction = 'right';
+        if (d === 'up' && direction !== 'down') direction = 'up';
+        if (d === 'down' && direction !== 'up') direction = 'down';
+    }
+    document.addEventListener('keydown', function(e) {
+        if (currentView === 'game') {
+            if (e.key === 'ArrowUp') changeDir('up');
+            if (e.key === 'ArrowDown') changeDir('down');
+            if (e.key === 'ArrowLeft') changeDir('left');
+            if (e.key === 'ArrowRight') changeDir('right');
+        }
+    });
+
+    function gameLoop() {
+        let head = { ...snake[0] };
+        if (direction === 'right') head.x++; if (direction === 'left') head.x--;
+        if (direction === 'up') head.y--; if (direction === 'down') head.y++;
+        if (head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20 || snake.some(s => s.x === head.x && s.y === head.y)) {
+            alert("GAME OVER!"); resetGameUI(); return;
+        }
+        snake.unshift(head);
+        if (head.x === food.x && head.y === food.y) {
+            food = { x: Math.floor(Math.random()*20), y: Math.floor(Math.random()*20) };
+        } else { snake.pop(); }
+        ctx.fillStyle = '#111'; ctx.fillRect(0,0,200,200);
+        ctx.fillStyle = '#0f0'; snake.forEach(s => ctx.fillRect(s.x*10, s.y*10, 9, 9));
+        ctx.fillStyle = '#f00'; ctx.fillRect(food.x*10, food.y*10, 9, 9);
+    }
+</script>
+</body>
+</html>
